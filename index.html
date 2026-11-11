@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Código de colores de resistencias</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#5d6670;--bd:#d7dce2;--ac:#2a6fdb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15181c;--card:#1e2328;--tx:#e8ebef;--mu:#98a2ad;--bd:#343b43;--ac:#6da2ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15181c;--card:#1e2328;--tx:#e8ebef;--mu:#98a2ad;--bd:#343b43;--ac:#6da2ff;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:680px;margin:0 auto;padding:16px}
+h1{font-size:1.25rem;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.seg{display:flex;gap:6px;margin-bottom:12px}
+.seg button{flex:1;padding:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;font:inherit;cursor:pointer}
+.seg button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+svg{width:100%;height:auto;display:block}
+.res{text-align:center}
+.val{font-size:2rem;font-weight:700;margin:4px 0}
+.sub{color:var(--mu);font-size:.9rem}
+.row{margin-bottom:12px}
+.row:last-child{margin-bottom:0}
+.lab{font-size:.85rem;color:var(--mu);margin-bottom:6px}
+.sw{display:flex;flex-wrap:wrap;gap:8px}
+.sw button{width:36px;height:36px;border-radius:50%;border:2px solid var(--bd);cursor:pointer;padding:0}
+.sw button.on{outline:3px solid var(--ac);outline-offset:2px}
+.nm{font-size:.8rem;color:var(--mu);margin-top:4px}
+</style>
+</head>
+<body>
+<main>
+<h1>Código de colores de resistencias</h1>
+<div class="seg" id="seg"></div>
+<div class="card res">
+<svg viewBox="0 0 320 100" role="img" aria-label="Resistencia">
+<line x1="5" y1="50" x2="315" y2="50" stroke="#9aa3ad" stroke-width="5"/>
+<rect x="55" y="20" width="210" height="60" rx="26" fill="#d9c08f"/>
+<g id="bands"></g>
+</svg>
+<div class="val" id="val"></div>
+<div class="sub" id="sub"></div>
+</div>
+<div class="card" id="pick"></div>
+</main>
+<script>
+const C={negro:'#111',"marrón":'#7a4a21',rojo:'#d62828',naranja:'#f77f00',amarillo:'#f4d03f',verde:'#2e9e4f',azul:'#2a6fdb',violeta:'#8e44ad',gris:'#8a8f98',blanco:'#f5f5f5',dorado:'#c9a227',plata:'#bfc5cc'};
+const D=['negro','marrón','rojo','naranja','amarillo','verde','azul','violeta','gris','blanco'];
+const ROLES={
+d1:{l:'1.ª cifra',c:D.slice(1)},
+d2:{l:'2.ª cifra',c:D},
+d3:{l:'3.ª cifra',c:D},
+m:{l:'Multiplicador',c:[...D,'dorado','plata']},
+t:{l:'Tolerancia',c:['marrón','rojo','verde','azul','violeta','gris','dorado','plata']},
+tc:{l:'Coef. de temperatura',c:['marrón','rojo','naranja','amarillo','azul','violeta']}};
+const TOL={"marrón":1,rojo:2,verde:.5,azul:.25,violeta:.1,gris:.05,dorado:5,plata:10};
+const TC={"marrón":100,rojo:50,naranja:15,amarillo:25,azul:10,violeta:5};
+const LAY={4:['d1','d2','m','t'],5:['d1','d2','d3','m','t'],6:['d1','d2','d3','m','t','tc']};
+const S={n:4,d1:'marrón',d2:'negro',d3:'negro',m:'rojo',t:'dorado',tc:'marrón'};
+const $=id=>document.getElementById(id);
+const mult=c=>c==='dorado'?.1:c==='plata'?.01:Math.pow(10,D.indexOf(c));
+function fmt(v){
+ let u='Ω',x=v;
+ if(v>=1e9){x=v/1e9;u='GΩ'}else if(v>=1e6){x=v/1e6;u='MΩ'}else if(v>=1e3){x=v/1e3;u='kΩ'}
+ return parseFloat(x.toPrecision(4))+' '+u;
+}
+function render(){
+ const L=LAY[S.n];
+ $('seg').innerHTML=[4,5,6].map(n=>`<button class="${n===S.n?'on':''}" data-n="${n}">${n} bandas</button>`).join('');
+ $('pick').innerHTML=L.map(r=>`<div class="row"><div class="lab">${ROLES[r].l}: <b>${S[r]}</b></div><div class="sw">${ROLES[r].c.map(c=>`<button class="${S[r]===c?'on':''}" data-r="${r}" data-c="${c}" style="background:${C[c]}" aria-label="${c}" title="${c}"></button>`).join('')}</div></div>`).join('');
+ const xs=S.n===4?[85,115,145,215]:S.n===5?[80,105,130,155,215]:[75,98,121,144,185,230];
+ $('bands').innerHTML=L.map((r,i)=>`<rect x="${xs[i]}" y="20" width="14" height="60" fill="${C[S[r]]}" stroke="#0003"/>`).join('');
+ const nd=S.n===4?2:3;
+ const dg=parseInt(['d1','d2','d3'].slice(0,nd).map(r=>D.indexOf(S[r])).join(''),10);
+ const v=dg*mult(S.m),tol=TOL[S.t];
+ $('val').textContent=fmt(v)+' ±'+tol+'%';
+ let s='Rango: '+fmt(v*(1-tol/100))+' a '+fmt(v*(1+tol/100));
+ if(S.n===6)s+=' · '+TC[S.tc]+' ppm/K';
+ $('sub').textContent=s;
+}
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.n){S.n=+b.dataset.n}
+ else if(b.dataset.r){S[b.dataset.r]=b.dataset.c}
+ render();
+});
+render();
+</script>
+</body>
+</html>
